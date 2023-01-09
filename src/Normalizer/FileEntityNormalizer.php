@@ -84,7 +84,7 @@ class FileEntityNormalizer extends ContentEntityNormalizer {
             $data['uri'] = [
               [
                 'value' => $uri,
-                'url' => str_replace($GLOBALS['base_url'], '', file_create_url($uri))
+                'url' => \Drupal::service('file_url_generator')->generateString($uri),
               ]
             ];
 

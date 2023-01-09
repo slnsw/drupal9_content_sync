@@ -364,86 +364,129 @@ class ContentSyncCommands extends DrushCommands {
     'files' => '',
     'include-dependencies' => FALSE,
     'skiplist' => FALSE,
+    'force' => FALSE,
     'compare-dates' => FALSE ]) {
-
-    // Generate comparer with filters.
-    $storage_comparer = new ContentStorageComparer($this->contentStorage, $this->contentStorageSync);
-    $change_list = [];
-    $collections = $storage_comparer->getAllCollectionNames();
-    if (!empty($options['entity-types'])) {
-      $entity_types = explode(',', $options['entity-types']);
-      $match_collections = [];
-      foreach ($entity_types as $entity_type) {
-        $match_collections = $match_collections + preg_grep('/^' . $entity_type . '/', $collections);
-      }
-      $collections = $match_collections;
-    }
-    foreach ($collections as $collection) {
-      if (!empty($options['uuids'])) {
-        $storage_comparer->createChangelistbyCollectionAndNames($collection, $options['uuids']);
-      }
-      else {
-        $storage_comparer->createChangelistbyCollection($collection);
-      }
-      if (!empty($options['actions'])) {
-        $actions = explode(',', $options['actions']);
-        foreach ($actions as $op) {
-          if (in_array($op, ['create', 'update', 'delete'])) {
-            $change_list[$collection][$op] = $storage_comparer->getChangelist($op, $collection);
-          }
-        }
-      } elseif ($options['compare-dates']) {
-          $storage_comparer->createChangelistbyCollection($collection, TRUE);
-      } else {
-        $change_list[$collection] = $storage_comparer->getChangelist(NULL, $collection);
-      }
-      $change_list = array_map('array_filter', $change_list);
-      $change_list = array_filter($change_list);
-    }
-    unset($change_list['']);
-
-    // Display the change list.
-    if (empty($options['skiplist'])) {
-      // Show differences.
-      $this->output()
-        ->writeln("Differences of the active content to the export directory:\n");
-      // Print a table with changes in color.
-      $table = self::contentChangesTable($change_list, $this->output());
-      $table->render();
-      // Ask to continue.
-      if (!$this->io()
-        ->confirm(dt('Do you want to export?'))) {
-        throw new UserAbortException();
-      }
-    }
-
-    // Process the Export.
     $entities_list = [];
-    foreach ($change_list as $collection => $changes) {
-      //$storage_comparer->getTargetStorage($collection)->deleteAll();
-      foreach ($changes as $change => $contents) {
-        switch ($change) {
-          case 'delete':
-            foreach ($contents as $content) {
-              $storage_comparer->getTargetStorage($collection)
-                ->delete($content);
+
+    // Don't rely on the snapshot/diffs.
+    if (!empty($options['force'])) {
+      $entities_allowed = [];
+      if (!empty($options['entity-types'])){
+        $entity_allowed = explode(',', $options['entity-types']);
+        foreach ($entity_allowed as $key => $entity){
+          list($type,$bundle) = explode('.', $entity);
+          $entities_allowed[$type][] = $bundle;
+        }
+      }
+      // Set batch operations by entity type/bundle.
+      $entities_list = [];
+      $entity_type_definitions = $this->entityTypeManager->getDefinitions();
+      $entities_types_allowed = array_keys($entities_allowed);
+      foreach ($entity_type_definitions as $entity_type => $definition) {
+        $reflection = new \ReflectionClass($definition->getClass());
+        if ($reflection->implementsInterface(ContentEntityInterface::class)) {
+          if (empty($options['entity-types']) || in_array($entity_type, $entities_types_allowed)) {
+            $storage = $this->entityTypeManager->getStorage($entity_type);
+            $query = $storage->getQuery();
+            if(!empty($options['entity-types'])){
+              $bundles_allowed = array_filter($entities_allowed[$entity_type]);
+              $query->condition('type', $bundles_allowed, 'in');
             }
-            break;
-          case 'update':
-          case 'create':
-            foreach ($contents as $content) {
-              //$data = $storage_comparer->getSourceStorage($collection)->read($content);
-              //$storage_comparer->getTargetStorage($collection)->write($content, $data);
-              $entity = explode('.', $content);
+            if (!empty($options['uuids'])){
+              $uuids = explode(',', $options['uuids']);
+              $query->condition('uuid', $uuids, 'in');
+            }
+            $entities = $query->execute();
+            foreach ($entities as $entity_id) {
               $entities_list[] = [
-                'entity_type' => $entity[0],
-                'entity_uuid' => $entity[2],
+                'entity_type' => $entity_type,
+                'entity_id' => $entity_id,
               ];
             }
-            break;
+          }
         }
       }
     }
+    else {
+      // Generate comparer with filters.
+      $storage_comparer = new ContentStorageComparer($this->contentStorage, $this->contentStorageSync);
+      $change_list = [];
+      $collections = $storage_comparer->getAllCollectionNames();
+      if (!empty($options['entity-types'])) {
+        $entity_types = explode(',', $options['entity-types']);
+        $match_collections = [];
+        foreach ($entity_types as $entity_type) {
+          $match_collections = $match_collections + preg_grep('/^' . $entity_type . '/', $collections);
+        }
+        $collections = $match_collections;
+      }
+      foreach ($collections as $collection) {
+        if (!empty($options['uuids'])) {
+          $storage_comparer->createChangelistbyCollectionAndNames($collection, $options['uuids']);
+        }
+        else {
+          $storage_comparer->createChangelistbyCollection($collection);
+        }
+        if (!empty($options['actions'])) {
+          $actions = explode(',', $options['actions']);
+          foreach ($actions as $op) {
+            if (in_array($op, ['create', 'update', 'delete'])) {
+              $change_list[$collection][$op] = $storage_comparer->getChangelist($op, $collection);
+            }
+          }
+        } elseif ($options['compare-dates']) {
+            $storage_comparer->createChangelistbyCollection($collection, TRUE);
+        } else {
+          $change_list[$collection] = $storage_comparer->getChangelist(NULL, $collection);
+        }
+        $change_list = array_map('array_filter', $change_list);
+        $change_list = array_filter($change_list);
+      }
+      unset($change_list['']);
+
+      // Display the change list.
+      if (empty($options['skiplist'])) {
+        // Show differences.
+        $this->output()
+          ->writeln("Differences of the active content to the export directory:\n");
+        // Print a table with changes in color.
+        $table = self::contentChangesTable($change_list, $this->output());
+        $table->render();
+        // Ask to continue.
+        if (!$this->io()
+          ->confirm(dt('Do you want to export?'))) {
+          throw new UserAbortException();
+        }
+      }
+
+      // Process the Export.
+      foreach ($change_list as $collection => $changes) {
+        //$storage_comparer->getTargetStorage($collection)->deleteAll();
+        foreach ($changes as $change => $contents) {
+          switch ($change) {
+            case 'delete':
+              foreach ($contents as $content) {
+                $storage_comparer->getTargetStorage($collection)
+                  ->delete($content);
+              }
+              break;
+            case 'update':
+            case 'create':
+              foreach ($contents as $content) {
+                //$data = $storage_comparer->getSourceStorage($collection)->read($content);
+                //$storage_comparer->getTargetStorage($collection)->write($content, $data);
+                $entity = explode('.', $content);
+                $entities_list[] = [
+                  'entity_type' => $entity[0],
+                  'entity_uuid' => $entity[2],
+                ];
+              }
+              break;
+          }
+        }
+      }      
+    }
+
     // Files options.
     $include_files = self::processFilesOption($options);
 
