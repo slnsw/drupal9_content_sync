@@ -109,8 +109,8 @@ class ContentEntityNormalizer extends BaseContentEntityNormalizer {
   /**
    * @inheritdoc
    */
-  public function supportsDenormalization($data, $type, $format = NULL) {
-    return parent::supportsDenormalization($data, $type, $format);
+  public function supportsDenormalization($data, string $type, ?string $format = NULL, array $context = []) {
+    return parent::supportsDenormalization($data, $type, $format, $context);
   }
 
   /**
