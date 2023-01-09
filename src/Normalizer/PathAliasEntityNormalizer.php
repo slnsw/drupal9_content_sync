@@ -51,7 +51,7 @@ class PathAliasEntityNormalizer extends ContentEntityNormalizer {
   /**
    * {@inheritdoc}
    */
-  public function denormalize($data, $class, $format = NULL, array $context = []) {
+  public function denormalize($data, $class, $format = NULL, array $context = []): mixed {
     $referenced_entity_uuid = $data['path']['target_uuid'];
     $referenced_entity_type = $data['path']['target_type'];
     if ($referenced_entity = $this->entityRepository->loadEntityByUuid($referenced_entity_type, $referenced_entity_uuid)) {

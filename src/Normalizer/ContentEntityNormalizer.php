@@ -45,7 +45,7 @@ class ContentEntityNormalizer extends BaseContentEntityNormalizer {
   /**
    * {@inheritdoc}
    */
-  public function denormalize($data, $class, $format = NULL, array $context = []) {
+  public function denormalize($data, $class, $format = NULL, array $context = []): mixed {
     if (is_null($data)) {
       return NULL;
     }

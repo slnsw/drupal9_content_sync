@@ -18,7 +18,7 @@ class UserEntityNormalizer extends ContentEntityNormalizer {
   /**
    * {@inheritdoc}
    */
-  public function denormalize($data, $class, $format = NULL, array $context = []) {
+  public function denormalize($data, $class, $format = NULL, array $context = []): mixed {
 
     $entity = parent::denormalize($data, $class, $format, $context);
 

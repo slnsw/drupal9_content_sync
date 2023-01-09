@@ -58,7 +58,7 @@ class FileEntityNormalizer extends ContentEntityNormalizer {
   /**
    * {@inheritdoc}
    */
-  public function denormalize($data, $class, $format = NULL, array $serializer_context = array()) {
+  public function denormalize($data, $class, $format = NULL, array $serializer_context = array()): mixed {
 
     $file_data = '';
 
