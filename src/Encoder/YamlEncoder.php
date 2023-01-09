@@ -35,7 +35,7 @@ class YamlEncoder implements EncoderInterface, DecoderInterface{
     return $this->yaml->decode($data);
   }
 
-  public function supportsDecoding($format) {
+  public function supportsDecoding(string $format): bool {
     return $format == $this->format;
   }
 
@@ -43,7 +43,7 @@ class YamlEncoder implements EncoderInterface, DecoderInterface{
     return $this->yaml->encode($data);
   }
 
-  public function supportsEncoding($format) {
+  public function supportsEncoding(string $format): bool {
     return $format == $this->format;
   }
 }
