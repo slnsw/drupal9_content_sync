@@ -31,7 +31,7 @@ class YamlEncoder implements EncoderInterface, DecoderInterface{
     $this->yaml = $yaml;
   }
 
-  public function decode($data, $format, array $context = array()) {
+  public function decode(string $data, string $format, array $context = []) {
     return $this->yaml->decode($data);
   }
 
@@ -39,7 +39,7 @@ class YamlEncoder implements EncoderInterface, DecoderInterface{
     return $format == $this->format;
   }
 
-  public function encode($data, $format, array $context = array()) {
+  public function encode(mixed $data, string $format, array $context = []): string {
     return $this->yaml->encode($data);
   }
 
