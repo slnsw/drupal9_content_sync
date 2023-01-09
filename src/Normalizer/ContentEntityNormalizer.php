@@ -102,8 +102,8 @@ class ContentEntityNormalizer extends BaseContentEntityNormalizer {
   /**
    * @inheritdoc
    */
-  public function supportsNormalization($data, $format = NULL) {
-    return parent::supportsNormalization($data, $format) && !empty($data->is_content_sync);
+  public function supportsNormalization($data, ?string $format = NULL, array $context = []): bool {
+    return parent::supportsNormalization($data, $format, $context) && !empty($data->is_content_sync);
   }
 
   /**
