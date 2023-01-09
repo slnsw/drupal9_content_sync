@@ -87,7 +87,7 @@ class ContentEntityNormalizer extends BaseContentEntityNormalizer {
   /**
    * {@inheritdoc}
    */
-  public function normalize($object, $format = NULL, array $context = []) {
+  public function normalize($object, $format = NULL, array $context = []): \ArrayObject|array|string|int|float|bool|null {
     /* @var ContentEntityInterface $object */
     $normalized_data = parent::normalize($object, $format, $context);
     $normalized_data['_content_sync'] = $this->getContentSyncMetadata($object, $context);
